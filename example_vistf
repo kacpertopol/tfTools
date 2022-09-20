@@ -133,7 +133,7 @@ opt_train = keras.optimizers.Adam(learning_rate = 0.001 , beta_1 = 0.9 , beta_2 
 
 model_train.compile(loss = "mean_squared_error" , optimizer = opt_train)
 
-vistf.sequential_to_svg(model_train , "model_deepCompare" , 
+vistf.sequential_to_svg(model_train , "model_example_vistf" , 
         iteration = 0 , 
         previousIteration = None , 
         nextIteration = 1 , 
@@ -164,10 +164,10 @@ for i in range(MX_EPOCHS):
     if ni >= MX_EPOCHS:
         ni = None
 
-    vistf.sequential_to_svg(model_train , "model_deepCompare" , 
+    vistf.sequential_to_svg(model_train , "model_example_vistf" , 
             iteration = i + 1 , 
             previousIteration = i , 
             nextIteration = ni , 
             pixelsPerME = 10.0)
 
-vistf.make_html_home("model_deepCompare" , "\n".join(log))
+vistf.make_html_home("model_example_vistf" , "\n".join(log))

@@ -12,7 +12,7 @@ from tensorflow import keras
 import numpy as np
 import copy
 
-import vistf
+import tfvis
 
 # CONSTANTS
 
@@ -43,7 +43,7 @@ init_uniform = keras.initializers.RandomUniform(minval = -1.0 , maxval = 1.0 , s
 
 model_layers = []
 
-l_in = keras.layers.Input(shape = [INPUT_NUMBER])
+l_in = keras.layers.Input(shape = [INPUT_NUMBER] , name = "first_layer")
 
 #l_in = keras.layers.Dense(1 , input_shape = [1] , 
 #        kernel_initializer = init_uniform ,
@@ -133,11 +133,15 @@ opt_train = keras.optimizers.Adam(learning_rate = 0.001 , beta_1 = 0.9 , beta_2 
 
 model_train.compile(loss = "mean_squared_error" , optimizer = opt_train)
 
-vistf.sequential_to_svg(model_train , "model_example_vistf" , 
-        iteration = 0 , 
-        previousIteration = None , 
-        nextIteration = 1 , 
-        pixelsPerME = 10.0)
+#tfvis.sequential_to_svg(model_train , "model_example_tfvis" , 
+#        iteration = 0 , 
+#        previousIteration = None , 
+#        nextIteration = 1 , 
+#        pixelsPerME = 10.0)
+
+tfvis.save_visualization("model_example_tfvis" , model_train , 
+                            first_iteration = True ,
+                            last_iteration = False)
 
 log = ["# model summary"]
 model_train.summary(print_fn = lambda x : log.append(x))
@@ -164,10 +168,15 @@ for i in range(MX_EPOCHS):
     if ni >= MX_EPOCHS:
         ni = None
 
-    vistf.sequential_to_svg(model_train , "model_example_vistf" , 
-            iteration = i + 1 , 
-            previousIteration = i , 
-            nextIteration = ni , 
-            pixelsPerME = 10.0)
+    #tfvis.sequential_to_svg(model_train , "model_example_tfvis" , 
+    #        iteration = i + 1 , 
+    #        previousIteration = i , 
+    #        nextIteration = ni , 
+    #        pixelsPerME = 10.0)
 
-vistf.make_html_home("model_example_vistf" , "\n".join(log))
+    tfvis.save_visualization("model_example_tfvis" , model_train ,
+                                iteration = i + 1 ,
+                                first_iteration = False ,
+                                last_iteration = (i == MX_EPOCHS - 1))
+
+tfvis.make_html_home("model_example_tfvis" , "\n".join(log) , "first_layer")

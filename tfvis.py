@@ -10,8 +10,9 @@ def make_html_home(path , log , starting_node):
     html += ["<head></head>"]
     html += ["<body>"]
     html += ["<p>"]
-    html += ['<a href="' + starting_node + '_0.html" style = "text-decoration : none">FIRST_ELEMENT</a>']
+    html += ['<a href="' + starting_node + '_0.html" style = "text-decoration : none">FIRST_ELEMENT_FIRST_ITERATION</a>']
     html += ["</p>"]
+    html += ["<p>CONFIGURATION : </p>"]
     html += ["<listing>"]
     html += [log] 
     html += ["</listing>"]
@@ -81,7 +82,7 @@ def get_nodes(model):
 
     Returns:
 
-        (node_names , connections_before , connections_after)
+        (node_names , connections_before , connections_after , starting_layer)
     
     where
         
@@ -90,15 +91,19 @@ def get_nodes(model):
                                 that connect to node with name 'name'
         connections_after -     dictionary, connections_after['name'] returns a set of node names
                                 that node with name 'name' connects to
+        starting_layer -        first layer
     """
     config = model.get_config()
     names = set()
     connections_before = {}
     connections_after = {}
+    starting_layer = None
     for l in config['layers']:
         start = None
         if 'name' in l:
-            start = l['name']
+            start = l['config']['name']
+            if starting_layer is None:
+                starting_layer = name
             names.add(start)
         if 'inbound_nodes' in l:
             for lev0 in l['inbound_nodes']:
@@ -117,11 +122,17 @@ def get_nodes(model):
                             else:
                                 connections_after.update({lev2 : {start}})
 
-    if(len(connections_before) == 0 and len(connections_after) == 0 and len(names) == 0):
+    if(len(connections_before) == 0 and len(connections_after) == 0):
+        names = set()
+        connections_before = {}
+        connections_after = {}
+        starting_layer = None
         previous = None
         for l in model.layers:
             l_config = l.get_config()
             current = l_config['name']
+            if starting_layer is None:
+                starting_layer = current
             names.add(current)
             if(previous is not None):
                 if current in connections_before:
@@ -137,7 +148,8 @@ def get_nodes(model):
 
     if(len(names) == 0):
         raise ValueError('No node names in model.')
-    return (names , connections_before , connections_after)
+
+    return (names , connections_before , connections_after , starting_layer)
 
 def get_wb(model):
     """
@@ -220,14 +232,17 @@ def save_visualization(path , model , iteration = 0 ,
 
     previous_iteration_path = os.path.join(path , 'iteration_' + str(iteration - 1))
     if os.path.isdir(previous_iteration_path):
-        previous_iteration_model = keras.models.load(previous_iteration_model)
-        p_names , p_connections_before , p_connections_after = get_nodes(previous_iteration_model)
+        previous_iteration_model = keras.models.load_model(previous_iteration_path)
+        p_names , p_connections_before , p_connections_after , p_starting_layer = get_nodes(previous_iteration_model)
         p_wb = get_wb(previous_iteration_model)
         p_info = get_info(previous_iteration_model)
     
-    names , connections_before , connections_after = get_nodes(model)
+    names , connections_before , connections_after , starting_layer = get_nodes(model)
     wb = get_wb(model)
     info = get_info(model)
+
+    if iteration == 0:
+        make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer)
 
     for n in names:
         
@@ -238,19 +253,20 @@ def save_visualization(path , model , iteration = 0 ,
         n_html += ["<head></head>"]
         n_html += ["<body>"]
 
+        n_html += ['<p><a href="index.html" style = "text-decoration : none">START</a></p>']
         n_html += ["<p>NODE : " + n + "</p>"]
 
         n_html += ['<p>ITERATION : ' + str(iteration) + '</p>']
 
         n_html += ['<p>PREVIOUS ITERATION : ']
         if(not first_iteration):
-            n_previous_path = os.path.join(path , n + "_" + str(iteration - 1) + ".html")
+            n_previous_path = n + "_" + str(iteration - 1) + ".html"
             n_html += ['<a href="' + n_previous_path + '" style = "text-decoration : none">' + str(iteration - 1)  + '</a>']
         n_html += ["</p>"]
 
         n_html += ['<p>NEXT ITERATION : ']
         if(not last_iteration):
-            n_next_path = os.path.join(path , n + "_" + str(iteration + 1) + ".html")
+            n_next_path = n + "_" + str(iteration + 1) + ".html"
             n_html += ['<a href="' + n_next_path + '" style = "text-decoration : none">' + str(iteration + 1)  + '</a>']
         n_html += ["</p>"]
 

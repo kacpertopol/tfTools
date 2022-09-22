@@ -17,7 +17,7 @@ import tfvis
 # CONSTANTS
 
 ## EPOCHS
-MX_EPOCHS = 100
+MX_EPOCHS = 10
 
 ## NUMBER OF DEEP LAYERS
 DEEP_LAYERS = 5
@@ -43,7 +43,7 @@ init_uniform = keras.initializers.RandomUniform(minval = -1.0 , maxval = 1.0 , s
 
 model_layers = []
 
-l_in = keras.layers.Input(shape = [INPUT_NUMBER] , name = "first_layer")
+l_in = keras.layers.Input(shape = [INPUT_NUMBER])
 
 #l_in = keras.layers.Dense(1 , input_shape = [1] , 
 #        kernel_initializer = init_uniform ,
@@ -78,8 +78,6 @@ x_valid = np.random.normal(loc = 0.0 , scale = 1.0 , size = (VL_SIZE , INPUT_NUM
 
 y_train = model(x_train)
 y_valid = model(x_valid)
-
-print(y_valid)
 
 # MODEL FOR TRAINING
 
@@ -179,4 +177,3 @@ for i in range(MX_EPOCHS):
                                 first_iteration = False ,
                                 last_iteration = (i == MX_EPOCHS - 1))
 
-tfvis.make_html_home("model_example_tfvis" , "\n".join(log) , "first_layer")

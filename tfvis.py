@@ -89,6 +89,35 @@ def matrix_to_svg(mm , operation = "mul" , transpose = False):
 
     return "\n".join(svg)
 
+def activation_to_svg(height , name , transpose = False):
+    ul = [-2.0 , 1.0]
+    svg = []
+
+    if transpose:
+        svg = ['<?xml version="1.0"?>\n']
+        svg += ["<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"" + str(-1.0 - 3.0) + " 0.0 " + str(1.0 + 2.0) + " " + str(height + 2.0) + 
+                "\"" + ">\n"]
+        cx , cy = (-1.0 + 0) + ul[0] , 0.0 + ul[1]
+        svg += ['<rect x="' + str(cx) + '" y="' + str(cy) + '" width="1.0" height="' + str(height) + '" fill="rgb(255 , 255 , 255)" stroke = "rgb(0,0,0)" stroke-width = "0.1"/>']
+        svg += ['<text x = "' + str(cx + 0.5) + '" y = "' + str(cy + 0.5 * height) + '" style = "text-anchor : middle" font-size = "0.3" transform = "rotate(90 , ' + str(cx + 0.5) + ' , ' + str(cy + 0.5 * height) + ')">' + str(name) + '</text>']
+        svg += ['<circle cx="' + str(ul[0] + 0.5) +  '" cy="' + str(ul[1] - 0.5 + height) + '" fill = "rgb(0 , 0 , 0)" r="0.25" />']
+        svg += ['<circle cx="' + str(ul[0] + 0.5) +  '" cy="' + str(ul[1] - 0.5 + height) + '" fill = "rgb(255 , 255 , 255)" r="0.15" />']
+        
+        svg += ["</svg>\n"]
+    else:
+        svg = ['<?xml version="1.0"?>\n']
+        svg += ["<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"" + str(-1.0 - 3.0) + " 0.0 " + str(height + 2.0) + " " + str(1.0 + 2.0) + " " + 
+                "\"" + ">\n"]
+        cx , cy = (-1.0 + 0) + ul[0] , 0.0 + ul[1]
+        svg += ['<rect x="' + str(cx) + '" y="' + str(cy) + '" height="1.0" width="' + str(height) + '" fill="rgb(255 , 255 , 255)" stroke = "rgb(0,0,0)" stroke-width = "0.1"/>']
+        svg += ['<text x = "' + str(cx + 0.5 * height) + '" y = "' + str(cy + 0.5) + '" style = "text-anchor : middle" font-size = "0.3">' + str(name) + '</text>']
+        svg += ['<circle cx="' + str(cx + height + 0.5) +  '" cy="' + str(cy + 0.5) + '" fill = "rgb(0 , 0 , 0)" r="0.25" />']
+        svg += ['<circle cx="' + str(cx + height + 0.5) +  '" cy="' + str(cy + 0.5) + '" fill = "rgb(255 , 255 , 255)" r="0.15" />']
+        
+        svg += ["</svg>\n"]
+
+    return "\n".join(svg)
+
 def get_nodes(model):
     """
     Get nodes of a tensor flow model.
@@ -222,7 +251,8 @@ def save_visualization(path , model , iteration = 0 ,
         last_iteration = False ,
         width = 500 ,
         transpose = False ,
-        otherinfo = ""):
+        otherinfo = "" ,
+        addActivation = True):
     """
     Save model visualization.
 
@@ -239,6 +269,8 @@ def save_visualization(path , model , iteration = 0 ,
         width -                 Pixel width for images.
         transpose -             By default tensor flow weights are multiplied from the left.
                                 If transpose = true, then the matrices will be transposed before turning into svg.
+        otherinfo -             Other information for iteration.
+        addActivation -         Add activations svg.
 
     """
     if not os.path.isdir(path):
@@ -311,6 +343,8 @@ def save_visualization(path , model , iteration = 0 ,
                 n_html += ['<a href="' + after_path + '" style = "text-decoration : none">' + after  + '</a>']
         n_html += ["</p>"]
 
+        activation_height = None
+
         arr_ind = 0
         for arr in wb[n]:
             oper = "none"
@@ -341,6 +375,9 @@ def save_visualization(path , model , iteration = 0 ,
             elif(len(arr.shape) == 1):
                 oper = "add"
                 bias = arr.reshape((1 , arr.shape[0]))
+
+                activation_height = arr.shape[0]
+
                 arr_svg = matrix_to_svg(bias , operation = oper , transpose = transpose)
                 arr_path = n + "_arr_" + str(arr_ind) + "_" + str(iteration) + ".svg"
                 with open(os.path.join(path , arr_path) , 'w') as f:
@@ -369,6 +406,24 @@ def save_visualization(path , model , iteration = 0 ,
                 n_html += [str(arr)] 
                 n_html += ["</listing>"]
             arr_ind += 1
+
+        if info[n]['activation'] is not None:
+            n_html += ['<p>' + info[n]['activation'] + '</p>']
+            if addActivation:
+                ac_svg = activation_to_svg(activation_height , info[n]['activation'] , transpose = transpose)
+                ac_path = n + "_carr_" + str(iteration) + ".svg"
+                with open(os.path.join(path , ac_path) , 'w') as f:
+                    f.write(ac_svg)
+                if transpose: 
+                    n_html += ['<h2># ACTIVATION TRANSPOSED :</h2><img src = "' +  ac_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
+                else:
+                    n_html += ['<h2># ACTIVATION :</h2><img src = "' +  ac_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
+                n_html += ['<p>' + info[n]['activation'] + '</p>']
+            else:
+                n_html += ['<h1># ACTIVATION</h1><p>' + info[n]['activation'] + '</p>']
+
+
+
         n_html += ["<h1># NODE CONFIGURATION : </h1>"]
         n_html += ["<listing>"]
         n_html += [json.dumps(info[n] , indent = 2)] 

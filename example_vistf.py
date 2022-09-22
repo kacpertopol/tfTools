@@ -17,7 +17,7 @@ import tfvis
 # CONSTANTS
 
 ## EPOCHS
-MX_EPOCHS = 100
+MX_EPOCHS = 5
 
 ## NUMBER OF DEEP LAYERS
 DEEP_LAYERS = 5
@@ -116,7 +116,8 @@ model_train.compile(loss = "mean_squared_error" , optimizer = opt_train)
 tfvis.save_visualization("model_example_tfvis" , model_train , 
                             first_iteration = True ,
                             last_iteration = False ,
-                            transpose = True)
+                            transpose = False ,
+                            addActivation = True)
 
 print("# model summary")
 
@@ -142,6 +143,7 @@ for i in range(MX_EPOCHS):
                                 iteration = i + 1 ,
                                 first_iteration = False ,
                                 last_iteration = (i == MX_EPOCHS - 1) ,
-                                transpose = True , 
-                                otherinfo = str(history.params) + "\n" + str(history.history))
+                                transpose = False , 
+                                otherinfo = str(history.params) + "\n" + str(history.history),
+                                addActivation = True)
 

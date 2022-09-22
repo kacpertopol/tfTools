@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import json
 
-def make_html_home(path , log , starting_node , last_iteration = None):
+def make_html_home(path , log , starting_node , last_iteration = None , summary = None):
     if last_iteration is not None:
         html = ""
         with open(os.path.join(path , "index.html") , 'r') as f:
@@ -27,6 +27,9 @@ def make_html_home(path , log , starting_node , last_iteration = None):
         html += ["<h1># ITERATIONS</h1>"]
         html += ["REPLACE_ITERATIONS"]
         html += ['<h1># TRAINING </h1><img src = "h.png"/>']
+        if(summary is not None):
+            html += ['<h1># SUMMARY </h1>']
+            html += ['<listing>' + summary + '</listing>']
         html += ["<h1># CONFIGURATION</h1>"]
         html += ["<listing>"]
         html += [log] 
@@ -277,6 +280,10 @@ def save_visualization(path , model , iteration = 0 ,
     """
     if not os.path.isdir(path):
         os.mkdir(path)
+    
+    model_summary = []
+    model.summary(print_fn = lambda x : model_summary.append(x))
+    model_summary = "\n".join(model_summary)
 
     model.save(os.path.join(path , "iteration_" + str(iteration)))
 
@@ -302,7 +309,7 @@ def save_visualization(path , model , iteration = 0 ,
                 f.write(str(iteration) + " " + " ".join(list(map(lambda x : str(x) , otherinfo[key]))) + "\n")
 
     if iteration == 0:
-        make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer)
+        make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer , summary = model_summary)
     if last_iteration:
         make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer , 
                 last_iteration = iteration)

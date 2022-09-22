@@ -310,6 +310,10 @@ def save_visualization(path , model , iteration = 0 ,
 
     if iteration == 0:
         make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer , summary = model_summary)
+        histories = list(filter(lambda f : f.startswith('history_data_') , os.listdir(path)))
+        for hf in histories:
+            with open(os.path.join(path , hf) , 'w') as f:
+                f.write("")
     if last_iteration:
         make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer , 
                 last_iteration = iteration)

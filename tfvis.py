@@ -398,7 +398,7 @@ def save_visualization(path , model , iteration = 0 ,
                     arr_path = n + "_darr_" + str(arr_ind) + "_" + str(iteration) + ".svg"
                     with open(os.path.join(path , arr_path) , 'w') as f:
                         f.write(arr_svg)
-                    n_html += ['<h2>## DIFFERENCE FROM LAST ITERATION</h2><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
+                    n_html += ['<h2>## DIFFERENCE FROM LAST ITERATION </h2><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
                     mina , maxa , stda = np.min(darr) , np.max(darr) , np.std(darr)
                     n_html += ['<p>min , max , sigma = ' + str(mina) + " , " + str(maxa) + " , " + str(stda) + '</p>']
 
@@ -426,7 +426,7 @@ def save_visualization(path , model , iteration = 0 ,
                     arr_path = n + "_darr_" + str(arr_ind) + "_" + str(iteration) + ".svg"
                     with open(os.path.join(path , arr_path) , 'w') as f:
                         f.write(arr_svg)
-                    n_html += ['<h2>## DIFFERENCE FROM LAST ITERATION</h2><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
+                    n_html += ['<h2>## DIFFERENCE FROM LAST ITERATION </h2><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
                     mina , maxa , stda = np.min(darr) , np.max(darr) , np.std(darr)
                     n_html += ['<p>min , max , sigma = ' + str(mina) + " , " + str(maxa) + " , " + str(stda) + '</p>']
 

@@ -4,25 +4,37 @@ import numpy as np
 import os
 import json
 
-def make_html_home(path , log , starting_node):
-    html =  ["<!DOCTYPE html>"]
-    html += ["<html>"]
-    html += ["<head></head>"]
-    html += ["<body>"]
-    html += ["<p>"]
-    html += ['<a href="' + starting_node + '_0.html" style = "text-decoration : none">FIRST_ELEMENT_FIRST_ITERATION</a>']
-    html += ["</p>"]
-    html += ["<p>CONFIGURATION : </p>"]
-    html += ["<listing>"]
-    html += [log] 
-    html += ["</listing>"]
-    html += ["</body>"]
-    html += ["</html>"]
+def make_html_home(path , log , starting_node , last_iteration = None):
+    if last_iteration is not None:
+        html = ""
+        with open(os.path.join(path , "index.html") , 'r') as f:
+            html = f.read()
+        i_html = []
+        for i in range(last_iteration):
+            i_html += ['<a href="' + starting_node + '_' + str(i) + '.html" style = "text-decoration : none">' + str(i) + '</a>']
+        html = html.replace("REPLACE_ITERATIONS" , " ".join(i_html))            
+        with open(os.path.join(path , "index.html") , 'w') as f:
+            f.write(html)
+    else:
+        html =  ["<!DOCTYPE html>"]
+        html += ["<html>"]
+        html += ["<head></head>"]
+        html += ["<body>"]
+        html += ["<p>"]
+        html += ['<a href="' + starting_node + '_0.html" style = "text-decoration : none">FIRST_ELEMENT_FIRST_ITERATION</a>']
+        html += ["</p>"]
+        html += ["<h1># ITERATIONS : </h1>"]
+        html += ["<div width = \"500px\">REPLACE_ITERATIONS</div>"]
+        html += ["<h1># CONFIGURATION : </h1>"]
+        html += ["<listing>"]
+        html += [log] 
+        html += ["</listing>"]
+        html += ["</body>"]
+        html += ["</html>"]
+        with open(os.path.join(path , "index.html") , 'w') as f:
+            f.write("\n".join(html))
 
-    with open(os.path.join(path , "index.html") , 'w') as f:
-        f.write("\n".join(html))
-
-def matrix_to_svg(m , operation = "mul"):
+def matrix_to_svg(mm , operation = "mul" , transpose = False):
     """
     Produce svg of matrix.
 
@@ -33,11 +45,16 @@ def matrix_to_svg(m , operation = "mul"):
     Optional arguments:
 
         operation -             "mul" , "add" mean matrix multiplication and matrix addition respectively
+        transpose -             By default tensor flow weights are multiplied from the left.
+                                If transpose = true, then the matrices will be transposed before turning into svg.
 
     Returns:
 
         str -                   Svg
     """
+    m = mm
+    if(transpose):
+        m = mm.transpose()
     ul = [-2.0 , 1.0]
     maxAbs = np.abs(m).max()
     mScaled = np.copy(m)
@@ -203,7 +220,9 @@ def get_info(model):
 def save_visualization(path , model , iteration = 0 , 
         first_iteration = False , 
         last_iteration = False ,
-        width = 500):
+        width = 500 ,
+        transpose = False ,
+        otherinfo = ""):
     """
     Save model visualization.
 
@@ -218,6 +237,8 @@ def save_visualization(path , model , iteration = 0 ,
         first_iteration -       Set to true if this is the first iteration / epoch to save.
         last_iteration -        Set this to true if this is the last iteration / epoch to save.
         width -                 Pixel width for images.
+        transpose -             By default tensor flow weights are multiplied from the left.
+                                If transpose = true, then the matrices will be transposed before turning into svg.
 
     """
     if not os.path.isdir(path):
@@ -243,6 +264,9 @@ def save_visualization(path , model , iteration = 0 ,
 
     if iteration == 0:
         make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer)
+    if last_iteration:
+        make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer , 
+                last_iteration = iteration)
 
     for n in names:
         
@@ -254,30 +278,33 @@ def save_visualization(path , model , iteration = 0 ,
         n_html += ["<body>"]
 
         n_html += ['<p><a href="index.html" style = "text-decoration : none">START</a></p>']
-        n_html += ["<p>NODE : " + n + "</p>"]
+        
+        n_html += ["<h1># NAVIGATION</h1>"]
+    
+        n_html += ["<p>- NODE : " + n + "</p>"]
 
-        n_html += ['<p>ITERATION : ' + str(iteration) + '</p>']
+        n_html += ['<p>- ITERATION : ' + str(iteration) + '</p>']
 
-        n_html += ['<p>PREVIOUS ITERATION : ']
+        n_html += ['<p>- PREVIOUS ITERATION : ']
         if(not first_iteration):
             n_previous_path = n + "_" + str(iteration - 1) + ".html"
             n_html += ['<a href="' + n_previous_path + '" style = "text-decoration : none">' + str(iteration - 1)  + '</a>']
         n_html += ["</p>"]
 
-        n_html += ['<p>NEXT ITERATION : ']
+        n_html += ['<p>- NEXT ITERATION : ']
         if(not last_iteration):
             n_next_path = n + "_" + str(iteration + 1) + ".html"
             n_html += ['<a href="' + n_next_path + '" style = "text-decoration : none">' + str(iteration + 1)  + '</a>']
         n_html += ["</p>"]
 
-        n_html += ["<p>UP : "]
+        n_html += ["<p>- UP : "]
         if n in connections_before:
             for previous in connections_before[n]:
                 previous_path = previous + "_" + str(iteration) + ".html"
                 n_html += ['<a href="' + previous_path + '" style = "text-decoration : none">' + previous  + '</a>']
         n_html += ["</p>"]
 
-        n_html += ["<p>DOWN : "]
+        n_html += ["<p>- DOWN : "]
         if n in connections_after:
             for after in connections_after[n]:
                 after_path = after + "_" + str(iteration) + ".html"
@@ -289,55 +316,64 @@ def save_visualization(path , model , iteration = 0 ,
             oper = "none"
             if(len(arr.shape) == 2):
                 oper = "mul"
-                arr_svg = matrix_to_svg(arr , operation = oper)
+                arr_svg = matrix_to_svg(arr , operation = oper , transpose = transpose)
                 arr_path = n + "_arr_" + str(arr_ind) + "_" + str(iteration) + ".svg"
                 with open(os.path.join(path , arr_path) , 'w') as f:
                     f.write(arr_svg)
-                n_html += ['<p>WEIGHTS ' + str(arr_ind) + ':</p><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
+                if not transpose:
+                    n_html += ['<h1># WEIGHTS ' + str(arr_ind) + ':</h1><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
+                else:
+                    n_html += ['<h1># WEIGHTS TRANSPOSED ' + str(arr_ind) + ':</h1><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
                 mina , maxa , stda = np.min(arr) , np.max(arr) , np.std(arr)
-                n_html += ['<p>min , max , standard deviation = ' + str(mina) + " , " + str(maxa) + " , " + str(stda) + '</p>']
+                n_html += ['<p>min , max , sigma = ' + str(mina) + " , " + str(maxa) + " , " + str(stda) + '</p>']
 
                 if previous_iteration_model is not None:                
                     oper = "none"
                     darr = arr - p_wb[n][arr_ind]
-                    arr_svg = matrix_to_svg(darr , operation = oper)
+                    arr_svg = matrix_to_svg(darr , operation = oper , transpose = transpose)
                     arr_path = n + "_darr_" + str(arr_ind) + "_" + str(iteration) + ".svg"
                     with open(os.path.join(path , arr_path) , 'w') as f:
                         f.write(arr_svg)
+                    n_html += ['<h2>## DIFFERENCE FROM LAST ITERATION ' + str(arr_ind) + ':</h2><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
                     mina , maxa , stda = np.min(darr) , np.max(darr) , np.std(darr)
-                    n_html += ['<p>min , max , standard deviation = ' + str(mina) + " , " + str(maxa) + " , " + str(stda) + '</p>']
+                    n_html += ['<p>min , max , sigma = ' + str(mina) + " , " + str(maxa) + " , " + str(stda) + '</p>']
 
             elif(len(arr.shape) == 1):
                 oper = "add"
                 bias = arr.reshape((1 , arr.shape[0]))
-                arr_svg = matrix_to_svg(bias , operation = oper)
+                arr_svg = matrix_to_svg(bias , operation = oper , transpose = transpose)
                 arr_path = n + "_arr_" + str(arr_ind) + "_" + str(iteration) + ".svg"
                 with open(os.path.join(path , arr_path) , 'w') as f:
                         f.write(arr_svg)
-                n_html += ['<p>BIAS ' + str(arr_ind) + ':</p><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
+                if not transpose:
+                    n_html += ['<h1># BIAS ' + str(arr_ind) + ':</h1><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
+                else:
+                    n_html += ['<h1># BIAS TRANSPOSED ' + str(arr_ind) + ':</h1><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
                 mina , maxa , stda = np.min(arr) , np.max(arr) , np.std(arr)
-                n_html += ['<p>min , max , standard deviation = ' + str(mina) + " , " + str(maxa) + " , " + str(stda) + '</p>']
+                n_html += ['<p>min , max , sigma = ' + str(mina) + " , " + str(maxa) + " , " + str(stda) + '</p>']
 
                 if previous_iteration_model is not None:                
                     oper = "none"
                     darr = bias - p_wb[n][arr_ind].reshape((1 , p_wb[n][arr_ind].shape[0]))
-                    arr_svg = matrix_to_svg(darr , operation = oper)
+                    arr_svg = matrix_to_svg(darr , operation = oper , transpose = transpose)
                     arr_path = n + "_darr_" + str(arr_ind) + "_" + str(iteration) + ".svg"
                     with open(os.path.join(path , arr_path) , 'w') as f:
                         f.write(arr_svg)
+                    n_html += ['<h2>## DIFFERENCE FROM LAST ITERATION ' + str(arr_ind) + ':</h2><img src = "' +  arr_path + '" width = "' + str(width) + 'px" height = "' + str(width) + 'px" object-fit = "contain"/>']
                     mina , maxa , stda = np.min(darr) , np.max(darr) , np.std(darr)
-                    n_html += ['<p>min , max , standard deviation = ' + str(mina) + " , " + str(maxa) + " , " + str(stda) + '</p>']
+                    n_html += ['<p>min , max , sigma = ' + str(mina) + " , " + str(maxa) + " , " + str(stda) + '</p>']
 
             else:
-                n_html += ['<p>ARRAY ' + str(arr_ind) + '</p>']
+                n_html += ['<p># ARRAY ' + str(arr_ind) + '</p>']
                 n_html += ["<listing>"]
                 n_html += [str(arr)] 
                 n_html += ["</listing>"]
             arr_ind += 1
-        n_html += ["<p>NODE CONFIGURATION : </p>"]
+        n_html += ["<h1># NODE CONFIGURATION : </h1>"]
         n_html += ["<listing>"]
         n_html += [json.dumps(info[n] , indent = 2)] 
         n_html += ["</listing>"]
+        n_html += ['<h1># OTHER </h1><listing>' + otherinfo + '</listing>']
         n_html += ["</body>"]
         n_html += ["</html>"]
         

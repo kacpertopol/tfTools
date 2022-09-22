@@ -162,7 +162,7 @@ def sequential_to_svg(model , path , iteration = 0 , previousIteration = None , 
     previous = None
     p_a , p_w , p_b = None , None , None
     if previousIteration is not None:
-        previous = keras.models.load_model(os.path.join(path , "iteration_" + str(iteration - 1)))
+        previous = keras.models.load_model(os.path.join(path , "iteration_" + str(previousIteration)))
         p_config = previous.get_config()
         p_a = [l['config']['activation'] for l in config['layers'] if 'activation' in l['config']]
         p_wb = [l.get_weights() for l in previous.layers]

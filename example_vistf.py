@@ -17,7 +17,7 @@ import tfvis
 # CONSTANTS
 
 ## EPOCHS
-MX_EPOCHS = 10
+MX_EPOCHS = 100
 
 ## NUMBER OF DEEP LAYERS
 DEEP_LAYERS = 5
@@ -81,29 +81,11 @@ y_valid = model(x_valid)
 
 # MODEL FOR TRAINING
 
-#def kernel_from_layer(l , distortion = 0.0):
-#    l_w , l_b = l.get_weights()
-#    def init(shape , dtype = None):
-#        mu , sigma = 0.0 , distortion
-#        return np.copy(l_w) + np.random.normal(mu , sigma , l_w.shape)
-#    return init
-
-#def bias_from_layer(l , distortion = 0.0):
-#    l_w , l_b = l.get_weights()
-#    def init(shape , dtype = None):
-#        mu , sigma = 0.0 , distortion
-#        return np.copy(l_b) + np.random.normal(mu , sigma , l_b.shape)
-#    return init
-
 init_train = keras.initializers.LecunNormal()
 
 model_layers_train = []
 
 l_in = keras.layers.Input(shape = [INPUT_NUMBER])
-
-#l_in = keras.layers.Dense(1 , input_shape = [1] , 
-#        kernel_initializer = init_train ,
-#        bias_initializer = init_train)
 
 model_layers_train.append(l_in)
 
@@ -131,49 +113,35 @@ opt_train = keras.optimizers.Adam(learning_rate = 0.001 , beta_1 = 0.9 , beta_2 
 
 model_train.compile(loss = "mean_squared_error" , optimizer = opt_train)
 
-#tfvis.sequential_to_svg(model_train , "model_example_tfvis" , 
-#        iteration = 0 , 
-#        previousIteration = None , 
-#        nextIteration = 1 , 
-#        pixelsPerME = 10.0)
-
 tfvis.save_visualization("model_example_tfvis" , model_train , 
                             first_iteration = True ,
-                            last_iteration = False)
+                            last_iteration = False ,
+                            transpose = True)
 
-log = ["# model summary"]
-model_train.summary(print_fn = lambda x : log.append(x))
+print("# model summary")
 
-log += ["max expochs : " + str(MX_EPOCHS)]
-print(log[-1])
+print("max expochs : " + str(MX_EPOCHS))
 
 for i in range(MX_EPOCHS):
-    log += ["# epoch : " + str(i)]
-    print(log[-1])
+    print("# epoch : " + str(i))
 
     history = model_train.fit(
                 x_train , y_train , 
                 epochs = 1 ,
                 validation_data = (x_valid , y_valid))
 
-    log += [str(history.params)]
-    print(log[-1])
+    print(str(history.params))
 
-    log += [str(history.history)]
-    print(log[-1])
+    print(str(history.history))
 
     ni = i + 2
     if ni >= MX_EPOCHS:
         ni = None
 
-    #tfvis.sequential_to_svg(model_train , "model_example_tfvis" , 
-    #        iteration = i + 1 , 
-    #        previousIteration = i , 
-    #        nextIteration = ni , 
-    #        pixelsPerME = 10.0)
-
     tfvis.save_visualization("model_example_tfvis" , model_train ,
                                 iteration = i + 1 ,
                                 first_iteration = False ,
-                                last_iteration = (i == MX_EPOCHS - 1))
+                                last_iteration = (i == MX_EPOCHS - 1) ,
+                                transpose = True , 
+                                otherinfo = str(history.params) + "\n" + str(history.history))
 

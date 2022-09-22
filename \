@@ -24,10 +24,9 @@ def make_html_home(path , log , starting_node , last_iteration = None):
         html += ["<p>"]
         html += ['<a href="' + starting_node + '_0.html" style = "text-decoration : none">FIRST_ELEMENT_FIRST_ITERATION</a>']
         html += ["</p>"]
-        html += ["<h1># ITERATIONS</h1>"]
+        html += ["<h1># ITERATIONS : </h1>"]
         html += ["REPLACE_ITERATIONS"]
-        html += ['<h1># TRAINING </h1><img src = "h.png"/>']
-        html += ["<h1># CONFIGURATION</h1>"]
+        html += ["<h1># CONFIGURATION : </h1>"]
         html += ["<listing>"]
         html += [log] 
         html += ["</listing>"]
@@ -308,16 +307,14 @@ def save_visualization(path , model , iteration = 0 ,
                 last_iteration = iteration)
         histories = list(filter(lambda f : f.startswith('history_data_') , os.listdir(path)))
         for hf in histories:
-            xdata , data = [] , []
+            data = []
             with open(os.path.join(path , hf) , 'r') as f:
                 for l in f.readlines():
-                    itera , value = list(map(lambda x : float(x) , l.split()))
-                    data.append(value)
-                    xdata.append(itera)
-            lbl = hf[13:]
-            plt.plot(xdata , data , label = lbl)
+                    iteration , value = list(map(lambda x : float(x) , l.split()))
+                    data.append([iteration , value])
+            plt.plot(data , label = hf[12:])
         plt.legend(loc = 'upper right')
-        plt.savefig(os.path.join(path , "h.png"))
+        plt.savefig(os.path.join(path , "h"))
 
     for n in names:
         

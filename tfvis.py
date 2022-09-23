@@ -103,6 +103,7 @@ def activation_to_svg(height , name , transpose = False):
         svg = ['<?xml version="1.0"?>\n']
         svg += ["<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"" + str(-1.0 - 3.0) + " 0.0 " + str(1.0 + 2.0) + " " + str(height + 2.0) + 
                 "\"" + ">\n"]
+        svg += ['<rect x = "' + str(-1.0 - 3.0) + '" y = "0.0" width="' + str(1.0 + 2.0) + '" height="' + str(height + 2.0) + '" fill="rgb(255 , 255 , 255)"/>\n']
         cx , cy = (-1.0 + 0) + ul[0] , 0.0 + ul[1]
         svg += ['<rect x="' + str(cx) + '" y="' + str(cy) + '" width="1.0" height="' + str(height) + '" fill="rgb(255 , 255 , 255)" stroke = "rgb(0,0,0)" stroke-width = "0.1"/>']
         svg += ['<text x = "' + str(cx + 0.5) + '" y = "' + str(cy + 0.5 * height) + '" style = "text-anchor : middle" font-size = "0.3" transform = "rotate(90 , ' + str(cx + 0.5) + ' , ' + str(cy + 0.5 * height) + ')">' + str(name) + '</text>']

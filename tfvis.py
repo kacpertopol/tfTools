@@ -11,7 +11,7 @@ def make_html_home(path , log , starting_node , last_iteration = None , summary 
         with open(os.path.join(path , "index.html") , 'r') as f:
             html = f.read()
         i_html = []
-        for i in range(last_iteration):
+        for i in range(last_iteration + 1):
             i_html += ['<a href="' + starting_node + '_' + str(i) + '.html" style = "text-decoration : none">' + str(i) + '</a>']
         html = html.replace("REPLACE_ITERATIONS" , " ".join(i_html))            
         with open(os.path.join(path , "index.html") , 'w') as f:
@@ -72,7 +72,8 @@ def matrix_to_svg(mm , operation = "mul" , transpose = False):
     svg = ['<?xml version="1.0"?>\n']
     svg += ["<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"" + str(-m.shape[1] - 3.0) + " 0.0 " + str(m.shape[1] + 2.0) + " " + str(m.shape[0] + 2.0) + 
             "\"" + ">\n"]
-    svg += ['<rect width="100%" height="100%" fill="rgb(255 , 255 , 255)"/>\n']
+    #svg += ['<rect width="100%" height="100%" fill="rgb(255 , 255 , 255)"/>\n']
+    svg += ['<rect x = "' + str(-m.shape[1] - 3.0) + '" y = "0.0" width="' + str(m.shape[1] + 2.0) + '" height="' + str(m.shape[0] + 2.0) + '" fill="rgb(255 , 255 , 255)"/>\n']
     for ic in range(m.shape[1]):
         cx = (-m.shape[1] + ic) + ul[0]
         svg += ['<text x = "' + str(cx + 0.5) + '" y = "' + str(0.75) + '" style = "text-anchor : middle" font-size = "0.33">' + str(ic) + '</text>']

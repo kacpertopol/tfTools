@@ -5,39 +5,68 @@ import matplotlib.pyplot as plt
 import os
 import json
 
-def make_html_home(path , log , starting_node , last_iteration = None , summary = None):
-    if last_iteration is not None:
-        html = ""
-        with open(os.path.join(path , "index.html") , 'r') as f:
-            html = f.read()
-        i_html = []
-        for i in range(last_iteration + 1):
-            i_html += ['<a href="' + starting_node + '_' + str(i) + '.html" style = "text-decoration : none">' + str(i) + '</a>']
-        html = html.replace("REPLACE_ITERATIONS" , " ".join(i_html))            
-        with open(os.path.join(path , "index.html") , 'w') as f:
-            f.write(html)
+def make_html_home(path , log , starting_node , summary = None):
+    all_iterations = None
+    iteration = None
+    with open(os.path.join(path , "iterations") , "r") as f:
+        all_iterations = list(map(lambda x : int(x) , f.read().split()))
+        iteration = all_iterations[-1]
+
+    last_iteration = iteration
+
+    html =  ["<!DOCTYPE html>"]
+    html += ["<html>"]
+    html += ["<head></head>"]
+    html += ["<body>"]
+    html += ["<p>"]
+    html += ['<a href="' + starting_node + '_0.html" style = "text-decoration : none">FIRST_ELEMENT_FIRST_ITERATION</a>']
+    html += ["</p>"]
+    html += ["<h1># ITERATIONS</h1>"]
+    html += ["REPLACE_ITERATIONS"]
+    html += ['<h1># TRAINING </h1><img src = "h.png"/>']
+    if(summary is not None):
+        html += ['<h1># SUMMARY </h1>']
+        html += ['<listing>' + summary + '</listing>']
+    html += ["<h1># CONFIGURATION</h1>"]
+    html += ["<listing>"]
+    html += [log] 
+    html += ["</listing>"]
+    html += ["</body>"]
+    html += ["</html>"]
+    with open(os.path.join(path , "index_template.html") , 'w') as f:
+        f.write("\n".join(html))
+
+    histories = list(filter(lambda f : f.startswith('history_data_') , os.listdir(path)))
+    if(len(histories) != 0):
+        for hf in histories:
+            xdata , data = [] , []
+            with open(os.path.join(path , hf) , 'r') as f:
+                for l in f.readlines():
+                    itera , value = list(map(lambda x : float(x) , l.split()))
+                    data.append(value)
+                    xdata.append(itera)
+            lbl = hf[13:]
+            plt.plot(xdata , data , label = lbl)
+        plt.legend(loc = 'upper right')
+        plt.savefig(os.path.join(path , "h.png"))
+        plt.clf()
     else:
-        html =  ["<!DOCTYPE html>"]
-        html += ["<html>"]
-        html += ["<head></head>"]
-        html += ["<body>"]
-        html += ["<p>"]
-        html += ['<a href="' + starting_node + '_0.html" style = "text-decoration : none">FIRST_ELEMENT_FIRST_ITERATION</a>']
-        html += ["</p>"]
-        html += ["<h1># ITERATIONS</h1>"]
-        html += ["REPLACE_ITERATIONS"]
-        html += ['<h1># TRAINING </h1><img src = "h.png"/>']
-        if(summary is not None):
-            html += ['<h1># SUMMARY </h1>']
-            html += ['<listing>' + summary + '</listing>']
-        html += ["<h1># CONFIGURATION</h1>"]
-        html += ["<listing>"]
-        html += [log] 
-        html += ["</listing>"]
-        html += ["</body>"]
-        html += ["</html>"]
-        with open(os.path.join(path , "index.html") , 'w') as f:
-            f.write("\n".join(html))
+        fig = plt.figure()
+        ax = fig.add_subplot(1 , 1 , 1)
+        plt.text(0.1, 0.85,'NO DATA',horizontalalignment='left',verticalalignment='center',transform = ax.transAxes)
+        plt.savefig(os.path.join(path , "h.png"))
+        plt.clf()
+
+    f_html = ""
+    with open(os.path.join(path , "index_template.html") , 'r') as f:
+        f_html = f.read()
+    i_html = []
+    for i in all_iterations:
+        i_html += ['<a href="' + starting_node + '_' + str(i) + '.html" style = "text-decoration : none">' + str(i) + '</a>']
+    f_html = f_html.replace("REPLACE_ITERATIONS" , " ".join(i_html))            
+    with open(os.path.join(path , "index.html") , 'w') as f:
+        f.write(f_html)
+
 
 def matrix_to_svg(mm , operation = "mul" , transpose = False):
     """
@@ -253,9 +282,7 @@ def get_info(model):
     
     return weights
 
-def save_visualization(path , model , iteration = 0 , 
-        first_iteration = False , 
-        last_iteration = False ,
+def save_visualization(path , model , 
         width = 500 ,
         transpose = False ,
         otherinfo = None ,
@@ -270,9 +297,6 @@ def save_visualization(path , model , iteration = 0 ,
     
     Optional arguments:
 
-        iteration -             Iteration / epoch number.
-        first_iteration -       Set to true if this is the first iteration / epoch to save.
-        last_iteration -        Set this to true if this is the last iteration / epoch to save.
         width -                 Pixel width for images.
         transpose -             By default tensor flow weights are multiplied from the left.
                                 If transpose = true, then the matrices will be transposed before turning into svg.
@@ -282,7 +306,22 @@ def save_visualization(path , model , iteration = 0 ,
     """
     if not os.path.isdir(path):
         os.mkdir(path)
-    
+   
+    all_iterations = None
+    iteration = None
+    if os.path.isfile(os.path.join(path , "iterations")):
+        with open(os.path.join(path , "iterations") , 'r') as f:
+            all_iterations = list(map(lambda x : int(x) , f.read().split()))
+        iteration = all_iterations[-1] + 1
+        all_iterations.append(iteration)
+        with open(os.path.join(path , "iterations") , 'a') as f:
+            f.write(str(iteration) + " ")
+    else:
+        with open(os.path.join(path , "iterations") , 'a') as f:
+            f.write("0 ")
+        all_iterations = [0]
+        iteration = 0
+
     model_summary = []
     model.summary(print_fn = lambda x : model_summary.append(x))
     model_summary = "\n".join(model_summary)
@@ -310,27 +349,13 @@ def save_visualization(path , model , iteration = 0 ,
             with open(os.path.join(path , "history_data_" + key) , "a") as f:
                 f.write(str(iteration) + " " + " ".join(list(map(lambda x : str(x) , otherinfo[key]))) + "\n")
 
+    make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer , summary = model_summary)
+    
     if iteration == 0:
-        make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer , summary = model_summary)
         histories = list(filter(lambda f : f.startswith('history_data_') , os.listdir(path)))
         for hf in histories:
             with open(os.path.join(path , hf) , 'w') as f:
                 f.write("")
-    if last_iteration:
-        make_html_home(path , json.dumps(model.get_config() , indent = 2) , starting_layer , 
-                last_iteration = iteration)
-        histories = list(filter(lambda f : f.startswith('history_data_') , os.listdir(path)))
-        for hf in histories:
-            xdata , data = [] , []
-            with open(os.path.join(path , hf) , 'r') as f:
-                for l in f.readlines():
-                    itera , value = list(map(lambda x : float(x) , l.split()))
-                    data.append(value)
-                    xdata.append(itera)
-            lbl = hf[13:]
-            plt.plot(xdata , data , label = lbl)
-        plt.legend(loc = 'upper right')
-        plt.savefig(os.path.join(path , "h.png"))
 
     for n in names:
         
@@ -350,14 +375,25 @@ def save_visualization(path , model , iteration = 0 ,
         n_html += ['<p>- ITERATION : ' + str(iteration) + '</p>']
 
         n_html += ['<p>- PREVIOUS ITERATION : ']
-        if(not first_iteration):
+        if(iteration != 0):
             n_previous_path = n + "_" + str(iteration - 1) + ".html"
             n_html += ['<a href="' + n_previous_path + '" style = "text-decoration : none">' + str(iteration - 1)  + '</a>']
         n_html += ["</p>"]
 
         n_html += ['<p>- NEXT ITERATION : ']
-        if(not last_iteration):
+        if(True): # TODO
+            t_html =  ["<!DOCTYPE html>"]
+            t_html += ["<html>"]
+            t_html += ["<head></head>"]
+            t_html += ["<body>"]
+            t_html += ["<p>"]
+            t_html += ['NO MORE ITERATIONS <a href="index.html" style = "text-decoration : none">HOME</a>']
+            t_html += ["</p>"]
+            t_html += ["</body>"]
+            t_html += ["</html>"]
             n_next_path = n + "_" + str(iteration + 1) + ".html"
+            with open(os.path.join(path , n_next_path) , "w") as f:
+                f.write("\n".join(t_html))
             n_html += ['<a href="' + n_next_path + '" style = "text-decoration : none">' + str(iteration + 1)  + '</a>']
         n_html += ["</p>"]
 
